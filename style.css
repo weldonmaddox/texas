@@ -144,3 +144,12 @@ main{flex:1;width:100%}
 .extras-list{margin:0 0 16px;padding-left:28px;font-size:18px;color:var(--ink-2)}
 .extras-list li{margin:0 0 4px;padding-left:4px}
 .extras-list li::marker{font-weight:800;color:var(--orange)}
+/* C5 (23-11-2026): no text under 14 px for readers over 55 */
+.small{font-size:14px}
+footer{font-size:14px}
+.step-label{font-size:14px}
+.kick{font-size:14px}
+.topbar .book{font-size:14px}
+@media(max-width:480px){.topbar .book{font-size:14px}}
+.save-hint{font-size:14px;color:var(--ink-2);margin:8px 0 0}
+footer .who{font-size:14px}

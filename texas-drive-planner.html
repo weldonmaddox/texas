@@ -98,6 +98,7 @@ article.tratto .pp { font-size: 16px; color: var(--ink); }
   </div>
   <datalist id="sedi"></datalist>
   <p id="cerca_err" class="ko nascosto"></p>
+  <p id="cerca_info" class="muted nascosto" aria-live="polite"></p>
   <ol id="tappe"></ol>
   <p class="muted" id="tappe_vuoto">No stops yet. Add at least two.</p>
 </section>
@@ -281,21 +282,31 @@ function disegna(fuoco) {
     (lunghi ? " " + plurale(lunghi, T("un_lungo", "One leg is longer than your range."), T("piu_lunghi", "{n} legs are longer than your range.")) : "");
 }
 function aggiungi() {
-  const v = $("#cerca").value.trim().toLowerCase();
+  const v = $("#cerca").value.trim().replace(/\s+/g, " ").toLowerCase();
   const err = $("#cerca_err");
   if (!v) return;
+  const info = $("#cerca_info");
+  info.classList.add("nascosto");
   let i = DATI.capoluoghi.findIndex((c, k) => etichetta(k).toLowerCase() === v);
+  let altra = -1;
   if (i < 0) {
-    const cand = DATI.capoluoghi.map((c, k) => k).filter((k) => {
-      const c = DATI.capoluoghi[k];
-      return c.n.toLowerCase() === v || c.c.toLowerCase() === v || c.c.toLowerCase() + " county" === v || (c.v || "").toLowerCase() === v;
-    });
-    if (cand.length === 1) i = cand[0];
+    // a town name wins over a county name: "Austin" is the city in Travis County, not Bellville in Austin County
+    const tutti = DATI.capoluoghi.map((c, k) => k);
+    const citta = tutti.filter((k) => DATI.capoluoghi[k].n.toLowerCase() === v || (DATI.capoluoghi[k].v || "").toLowerCase() === v);
+    const contea = tutti.filter((k) => DATI.capoluoghi[k].c.toLowerCase() === v || DATI.capoluoghi[k].c.toLowerCase() + " county" === v);
+    if (citta.length === 1) { i = citta[0]; altra = contea.find((k) => k !== i); if (altra === undefined) altra = -1; }
+    else if (!citta.length && contea.length === 1) i = contea[0];
   }
   if (i < 0) { err.textContent = T("non_trovato", "No county seat by that name. Pick one from the list as you type, by town or by county."); err.classList.remove("nascosto"); return; }
   err.classList.add("nascosto");
   if (TAPPE.length && TAPPE[TAPPE.length - 1] === i) { err.textContent = T("stessa", "That’s already your last stop."); err.classList.remove("nascosto"); return; }
   TAPPE.push(i); $("#cerca").value = ""; salva(); disegna();
+  if (altra >= 0) {
+    const a = DATI.capoluoghi[altra];
+    info.textContent = T("anche_contea", "Added {citta}. Looking for {contea} County instead? Its county seat is {sede}: type {sede}.")
+      .replace("{citta}", etichetta(i)).replace("{contea}", a.c).split("{sede}").join(a.n);
+    info.classList.remove("nascosto");
+  }
 }
 function stampa() {
   if (TAPPE.length < 2) { finestra(T("niente_titolo", "Nothing to print yet"), T("niente_testo", "Add at least two stops first."), [[T("ok", "OK"), true]]); return; }
